@@ -10,41 +10,16 @@ const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 export default function AddProduct() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [discount, setdiscount] = useState('');
+  const [price, setPrice] = useState(''); 
   const [stock, setStock] = useState('');
   const [img, setImg] = useState(['']);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [isNewArrival, setIsNewArrival] = useState(false);
-  const [productType, setProductType] = useState('single'); // 'single' or 'collection'
+  const [productType, setProductType] = useState('single'); 
   const [selectedColors, setSelectedColors] = useState([]);
   const [colorQuantities, setColorQuantities] = useState({});
   const [colorSizes, setColorSizes] = useState({});
 
-
-
-
-
-  const [originPrice, setOriginPrice] = useState('');
-  const [weightKg, setWeightKg] = useState('');
-  const [profitPercent, setProfitPercent] = useState('');
-  const [date, setShippingDate] = useState('');
-  const [shippingRate, setShippingRate] = useState('');
-
-  const origin = parseFloat(originPrice) || 0;
-  const weight = parseFloat(weightKg) || 0;
-  const profit = (parseFloat(profitPercent) || 0) / 100;
-  const rate = parseFloat(shippingRate) || 0;
-
-  const shippingCost = parseFloat((weight * rate).toFixed(2));
-const rawPrice = parseFloat(((origin + shippingCost) / (1 - profit || 1)).toFixed(2));
-const roundedUpPrice = (Math.floor(rawPrice) + 1) - 0.01;
-
-  const finalPrice = parseFloat((roundedUpPrice).toFixed(2));
-  const profitAmount = parseFloat((roundedUpPrice - (origin + shippingCost)).toFixed(2));
-  const oldprice = parseFloat((finalPrice * 1.25).toFixed(2));
-  const landing = parseFloat((shippingCost + origin).toFixed(2));
 
 
 
@@ -148,20 +123,10 @@ const roundedUpPrice = (Math.floor(rawPrice) + 1) - 0.01;
     const payload = {
       title,
       description,
-      price: oldprice.toFixed(2),
-      discount: finalPrice.toFixed(2),
-      origin: Number(parseFloat(origin).toFixed(2)),
-      weight: Number(parseFloat(weight).toFixed(2)),
-      profit: Number(parseFloat(profit).toFixed(2)),
-      rate: Number(parseFloat(rate).toFixed(2)),
-      shippingCost: Number(parseFloat(shippingCost).toFixed(2)),
-      landing: Number(parseFloat(landing).toFixed(2)),
-      profitAmount: Number(parseFloat(profitAmount).toFixed(2)),
-      date,
+price: Number(price).toFixed(2), 
       img,
       category: selectedCategory,
       type: productType,
-      ...(isNewArrival && { arrival: "yes" }),
       ...(productType === 'single' && { stock }),
       ...(productType === 'collection' && {
         color: selectedColors.map(color => {
@@ -278,97 +243,18 @@ const roundedUpPrice = (Math.floor(rawPrice) + 1) - 0.01;
 
 
 
-      <div className="max-w-2xl mx-auto p-4">
-        <h2 className="text-2xl font-bold mb-6">Sale Price Calculator</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium mb-1">Origin Price ($)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={originPrice}
-              onChange={(e) => setOriginPrice(e.target.value)}
-              className="w-full border p-2 rounded"
-              required
-            />
-          </div>
+      <input
+        type="number"
+        step="0.01"
+        placeholder="Price"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        className="w-full border p-2 mb-4"
+        required
+      />
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Weight (kg)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={weightKg}
-              onChange={(e) => setWeightKg(e.target.value)}
-              className="w-full border p-2 rounded"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Profit (%)</label>
-            <input
-              type="number"
-              step="0.1"
-              value={profitPercent}
-              onChange={(e) => setProfitPercent(e.target.value)}
-              className="w-full border p-2 rounded"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Shipping Date</label>
-            <input
-              type="month"
-              value={date}
-              onChange={(e) => setShippingDate(e.target.value)}
-              className="w-full border p-2 rounded"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Shipping Rate ($/kg)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={shippingRate}
-              onChange={(e) => setShippingRate(e.target.value)}
-              className="w-full border p-2 rounded"
-            />
-          </div>
-        </div>
-
-        <div className="bg-gray-100 p-4 rounded space-y-2 text-sm md:text-base">
-          <p><strong>Shipping Cost:</strong> ${shippingCost.toFixed(2)}</p>
-          <p><strong>Landing Cost:</strong> ${landing.toFixed(2)}</p>
-          <p><strong>Profit Amount:</strong> ${profitAmount.toFixed(2)}</p>
-        </div>
-
-        <div className="mt-4">
-          <label htmlFor="Price" className="text-lg font-bold">Compare-at price</label>
-          <input
-            type="number"
-            step="0.01"
-            placeholder="Price"
-            value={oldprice.toFixed(2)}
-            className="w-full border p-2 mb-4"
-            readOnly
-          />
-
-          <label htmlFor="Price" className="text-lg font-bold">Price</label>
-          <input
-            type="number"
-            step="0.01"
-            placeholder="Discounted Price"
-            value={finalPrice.toFixed(2)}
-            className="w-full border p-2 mb-4"
-            readOnly
-          />
-        </div>
-      </div>
-
-
-
+ 
 
 
 
@@ -457,10 +343,10 @@ const roundedUpPrice = (Math.floor(rawPrice) + 1) - 0.01;
                         className="bg-blue-500 text-white px-2 py-1 text-sm rounded"
                         onClick={() => {
                           const size = prompt('Enter size name (e.g., S, M, L)');
-                            if (!size || size.includes(',')) {
-    alert('Commas are not allowed in the size name.');
-    return;
-  }
+                          if (!size || size.includes(',')) {
+                            alert('Commas are not allowed in the size name.');
+                            return;
+                          }
 
                           setColorQuantities((prev) => ({
                             ...prev,
@@ -615,16 +501,7 @@ const roundedUpPrice = (Math.floor(rawPrice) + 1) - 0.01;
       <Upload onFilesUpload={handleImgChange} />Max 12 images
 
 
-      <div className="flex items-center my-4">
-        <input
-          type="checkbox"
-          id="newArrival"
-          checked={isNewArrival}
-          onChange={(e) => setIsNewArrival(e.target.checked)}
-          className="mr-2"
-        />
-        <label htmlFor="newArrival" className="text-lg font-bold">New Arrival</label>
-      </div>
+ <br/>
 
       <button type="submit" className="bg-green-500 text-white px-4 py-2">
         Save Product

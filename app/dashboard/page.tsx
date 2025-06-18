@@ -149,9 +149,8 @@ export default function ProductTable() {
           <tr className="bg-gray-100">
             <th className="border p-2">Title</th>
             <th className="border p-2">Pic</th>
-            <th className="border p-2">Discount Price (USD)</th>
-            <th className="border p-2">Category</th>
-            <th className="border p-2">New Arrival</th>
+            <th className="border p-2">Price (USD)</th>
+            <th className="border p-2">Category</th> 
             <th className="border p-2">Type</th>
             <th className="border p-2">Stock</th>
             <th className="border p-2">Colors & Qty</th>
@@ -225,14 +224,14 @@ export default function ProductTable() {
                 </td>
                 <td className="border p-2">
                   {product.type === 'single' || (product.type === 'collection' && !product.color)
-                    ? (`$${product.discount}`)
+                    ? (`$${product.price}`)
                     : (product.type === 'collection' && product.color && product.color.some(c => c.sizes?.length)
                       ? (() => {
                         const prices = product.color
                           .flatMap(c => c.sizes || [])
                           .map(s => s.price);
 
-                        if (prices.length === 0) return product.discount;
+                        if (prices.length === 0) return product.price;
 
                         const minPrice = Math.min(...prices);
                         const maxPrice = Math.max(...prices);
@@ -241,13 +240,12 @@ export default function ProductTable() {
                           ? `$${minPrice.toFixed(2)}`
                           : `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`;
                       })()
-                      : `$${product.discount}`
+                      : `$${product.price}`
                     )
                   }
                 </td>
 
-                <td className="border p-2">{product.category}</td>
-                <td className="border p-2">{product.arrival}</td>
+                <td className="border p-2">{product.category}</td> 
                 <td className="border p-2">{product.type}</td>
 
                 <td className="border p-2">
@@ -330,30 +328,12 @@ function EditProductForm({ product, onCancel, onSave }) {
   const [img, setImg] = useState(product.img || []);
   const [description, setDescription] = useState(product.description);
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(product.category || "");
-  const [arrival, setArrival] = useState(product.arrival === "yes");
+  const [selectedCategory, setSelectedCategory] = useState(product.category || ""); 
   const [type, setType] = useState(product.type || "single");
+    const [price, setPrice] = useState(product.price); 
+  const [discount, setDiscount] = useState(product.price || '');
 
-  const [originPrice, setOriginPrice] = useState(product.origin || '');
-  const [weightKg, setWeightKg] = useState(product.weight || '');
-  const [profitPercent, setProfitPercent] = useState(product.profit || '');
-  const [date, setShippingDate] = useState(product.date || '');
-  const [shippingRate, setShippingRate] = useState(product.rate || '');
-
-  const origin = parseFloat(originPrice) || 0;
-  const weight = parseFloat(weightKg) || 0;
-  const profit = (parseFloat(profitPercent) || 0);
-  const rate = parseFloat(shippingRate) || 0;
-
-  const shippingCost = parseFloat((weight * rate).toFixed(2));
-  const rawPrice = parseFloat(((origin + shippingCost) / (1 - profit || 1)).toFixed(2));
-  const roundedUpPrice = (Math.floor(rawPrice) + 1) - 0.01;
-  const finalPrice = parseFloat((roundedUpPrice).toFixed(2));
-  const profitAmount = parseFloat((roundedUpPrice - (origin + shippingCost)).toFixed(2));
-  const oldprice = parseFloat((finalPrice * 1.25).toFixed(2));
-  const landing = parseFloat((shippingCost + origin).toFixed(2));
-
-
+ 
   const availableColors = ["black", "white", "red", "yellow", "blue", "green", "orange", "purple", "brown", "gray", "pink"];
 
   const [selectedColors, setSelectedColors] = useState(() => {
@@ -395,20 +375,11 @@ function EditProductForm({ product, onCancel, onSave }) {
       ...product,
       title,
       description,
-      price: oldprice.toFixed(2),
-      discount: finalPrice.toFixed(2),
-      origin: Number(origin.toFixed(2)),
-      weight: Number(weight.toFixed(2)),
-      profit: Number(profit.toFixed(2)),
-      rate: Number(rate.toFixed(2)),
-      shippingCost: Number(shippingCost.toFixed(2)),
-      landing: Number(landing.toFixed(2)),
-      profitAmount: Number(profitAmount.toFixed(2)),
-      date,
+price: Number(price).toFixed(2),
+discount: Number(discount).toFixed(2),
       img,
       category: selectedCategory,
-      type,
-      ...(arrival && { arrival: "yes" }),
+      type, 
       ...(type === 'single' && { stock: stock }),
       ...(type === 'collection' && {
         color: Object.entries(selectedColors).map(([colorName, data]) => {
@@ -508,45 +479,11 @@ function EditProductForm({ product, onCancel, onSave }) {
             <option key={cat.id} value={cat.name}>{cat.name}</option>
           ))}
         </select>
-      </div>
-
-      <h3 className="text-lg font-semibold mt-6 mb-2">Pricing Calculator</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className="block text-sm font-medium">Origin Price ($)</label>
-          <input type="number" value={originPrice} step="0.01" onChange={(e) => setOriginPrice(e.target.value)} className="w-full border p-2" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Weight (kg)</label>
-          <input type="number" value={weightKg} step="0.01" onChange={(e) => setWeightKg(e.target.value)} className="w-full border p-2" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Profit (eg: 0.6 for 60%)</label>
-          <input type="number" value={profitPercent} step="0.1" onChange={(e) => setProfitPercent(e.target.value)} className="w-full border p-2" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Shipping Date</label>
-          <input type="month" value={date} onChange={(e) => setShippingDate(e.target.value)} className="w-full border p-2" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Shipping Rate ($/kg)</label>
-          <input type="number" value={shippingRate} step="0.01" onChange={(e) => setShippingRate(e.target.value)} className="w-full border p-2" />
-        </div>
-      </div>
-
-
-      <div className="bg-gray-100 p-4 rounded space-y-2 text-sm sm:text-base">
-        <p><strong>Shipping Cost:</strong> ${shippingCost.toFixed(2)}</p>
-        <p><strong>Landing Cost:</strong> ${landing.toFixed(2)}</p>
-        <p><strong>Profit Amount:</strong> ${profitAmount.toFixed(2)}</p>
-      </div>
-
+      </div> 
       <div className="mt-4">
-        <label className="text-sm font-bold">Compare-at Price</label>
-        <input type="number" value={oldprice.toFixed(2)} className="w-full border p-2 mb-2" readOnly />
-
-        <label className="text-sm font-bold">Discounted Price</label>
-        <input type="number" value={finalPrice.toFixed(2)} className="w-full border p-2" readOnly />
+        <label className="text-sm font-bold">Price</label>
+        <input type="number" value={price} className="w-full border p-2 mb-2"  />
+ 
       </div>
 
 
@@ -714,12 +651,7 @@ onClick={() => {
       <label className="block text-lg font-bold mb-2">Description</label>
       <ReactQuill value={description} onChange={setDescription} className="mb-4" theme="snow" placeholder="Write your product description here..." />
 
-      {/* Arrival */}
-      <div className="mb-4">
-        <input type="checkbox" checked={arrival} onChange={(e) => setArrival(e.target.checked)} />
-        <label className="ml-2 text-sm font-medium">New Arrival</label>
-      </div>
-
+ 
       {/* Image Upload */}
       <Upload onFilesUpload={(url) => setImg(url)} />
 
