@@ -14,13 +14,22 @@ export default function ProductTable() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [subcategories, setSubcategories] = useState([]);
 
 
   // Fetch products and categories on load
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchSubcategories();
   }, []);
+
+  const fetchSubcategories = async () => {
+    const res = await fetch('/api/sub');
+    const data = await res.json();
+    setSubcategories(data);
+  };
+
 
   const fetchProducts = async () => {
     const response = await fetch('/api/products');
@@ -150,7 +159,7 @@ export default function ProductTable() {
             <th className="border p-2">Title</th>
             <th className="border p-2">Pic</th>
             <th className="border p-2">Price (USD)</th>
-            <th className="border p-2">Category</th> 
+            <th className="border p-2">Category</th>
             <th className="border p-2">Type</th>
             <th className="border p-2">Stock</th>
             <th className="border p-2">Colors & Qty</th>
@@ -166,7 +175,7 @@ export default function ProductTable() {
             const isSingle = product.type === "single";
 
             // Stock Calculation Logic
-            const isOutOfStockSingle = isSingle && (product.stock === "0" || product.stock === 0 || product.stock === null );
+            const isOutOfStockSingle = isSingle && (product.stock === "0" || product.stock === 0 || product.stock === null);
 
             const allColorsQtyZero = isCollection &&
               product.color &&
@@ -245,7 +254,7 @@ export default function ProductTable() {
                   }
                 </td>
 
-                <td className="border p-2">{product.category}</td> 
+                <td className="border p-2">{product.category}</td>
                 <td className="border p-2">{product.type}</td>
 
                 <td className="border p-2">
@@ -328,12 +337,22 @@ function EditProductForm({ product, onCancel, onSave }) {
   const [img, setImg] = useState(product.img || []);
   const [description, setDescription] = useState(product.description);
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(product.category || ""); 
   const [type, setType] = useState(product.type || "single");
-    const [price, setPrice] = useState(product.price); 
-  const [discount, setDiscount] = useState(product.price || '');
+  const [price, setPrice] = useState(product.price);
+  const [subcategory, setSubcategory] = useState(product.subcategory || '');
+  const [subcategories, setSubcategories] = useState([]);
+  const [category, setCategory] = useState(product.category || '');
 
- 
+  useEffect(() => {
+    const fetchAll = async () => {
+      const [sub] = await Promise.all([
+        fetch('/api/sub').then(res => res.json()),
+      ]);
+      setSubcategories(sub);
+    };
+    fetchAll();
+  }, []);
+
   const availableColors = ["black", "white", "red", "yellow", "blue", "green", "orange", "purple", "brown", "gray", "pink"];
 
   const [selectedColors, setSelectedColors] = useState(() => {
@@ -361,7 +380,7 @@ function EditProductForm({ product, onCancel, onSave }) {
   }, []);
 
 
-
+  const filteredSub = subcategories.filter(s => s.category === category);
 
 
 
@@ -375,11 +394,11 @@ function EditProductForm({ product, onCancel, onSave }) {
       ...product,
       title,
       description,
-price: Number(price).toFixed(2),
-discount: Number(discount).toFixed(2),
+      price: Number(price).toFixed(2),
       img,
-      category: selectedCategory,
-      type, 
+      category,
+      subcategory,
+      type,
       ...(type === 'single' && { stock: stock }),
       ...(type === 'collection' && {
         color: Object.entries(selectedColors).map(([colorName, data]) => {
@@ -470,21 +489,43 @@ discount: Number(discount).toFixed(2),
         <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border p-2" required />
       </div>
 
-      {/* Category */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">Category</label>
-        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full border p-2">
-          <option value="">Select Category</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.name}>{cat.name}</option>
+
+
+
+      <select className="w-full p-2 border mb-2" value={category} onChange={(e) => handleCategoryChange(e.target.value)} required>
+        <option value="">Select Category</option>
+        {categories.map((cat) => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+      </select>
+      {category && filteredSub.length > 0 && (
+        <select
+          className="w-full p-2 border mb-2"
+          value={subcategory}
+          onChange={(e) => setSubcategory(e.target.value)}
+          required
+        >
+          <option value="">Select Subcategory</option>
+          {filteredSub.map((sub) => (
+            <option key={sub.id} value={sub.name}>
+              {sub.name}
+            </option>
           ))}
         </select>
-      </div> 
+      )}
+
+
+
+
+
+
+
+
+
       <div className="mt-4">
         <label className="text-sm font-bold">Price</label>
-        <input type="number" value={price} className="w-full border p-2 mb-2"  />
- 
+        <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full border p-2 mb-2" />
+
       </div>
+
 
 
 
@@ -577,14 +618,14 @@ discount: Number(discount).toFixed(2),
                       <button
                         type="button"
                         className="bg-blue-500 text-white px-2 py-1 text-sm rounded"
-onClick={() => {
-  const size = prompt('Enter size name (e.g., S, M, L)');
-  if (!size || size.includes(',')) {
-    alert('Commas are not allowed in the size name.');
-    return;
-  }
-  updateSize(color, size, { size, qty: 1, price: '' });
-}}
+                        onClick={() => {
+                          const size = prompt('Enter size name (e.g., S, M, L)');
+                          if (!size || size.includes(',')) {
+                            alert('Commas are not allowed in the size name.');
+                            return;
+                          }
+                          updateSize(color, size, { size, qty: 1, price: '' });
+                        }}
 
                       >
                         + Add Size
@@ -651,7 +692,7 @@ onClick={() => {
       <label className="block text-lg font-bold mb-2">Description</label>
       <ReactQuill value={description} onChange={setDescription} className="mb-4" theme="snow" placeholder="Write your product description here..." />
 
- 
+
       {/* Image Upload */}
       <Upload onFilesUpload={(url) => setImg(url)} />
 

@@ -10,15 +10,18 @@ const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 export default function AddProduct() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [price, setPrice] = useState(''); 
+  const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [img, setImg] = useState(['']);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [productType, setProductType] = useState('single'); 
+  const [productType, setProductType] = useState('single');
   const [selectedColors, setSelectedColors] = useState([]);
   const [colorQuantities, setColorQuantities] = useState({});
   const [colorSizes, setColorSizes] = useState({});
+  const [allSubCategories, setAllSubCategories] = useState([]);
+  const [filteredSubCategories, setFilteredSubCategories] = useState([]);
+  const [selectedSubCategory, setSelectedSubCategory] = useState('');
 
 
 
@@ -123,9 +126,10 @@ export default function AddProduct() {
     const payload = {
       title,
       description,
-price: Number(price).toFixed(2), 
+      price: Number(price).toFixed(2),
       img,
       category: selectedCategory,
+      subcategory: selectedSubCategory,
       type: productType,
       ...(productType === 'single' && { stock }),
       ...(productType === 'collection' && {
@@ -203,6 +207,21 @@ price: Number(price).toFixed(2),
 
 
 
+  useEffect(() => {
+    fetch('/api/sub')
+      .then((res) => res.json())
+      .then(setAllSubCategories)
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const filtered = allSubCategories?.filter(
+      (sub) => sub.category === selectedCategory
+    );
+    setFilteredSubCategories(filtered);
+    setSelectedSubCategory('');
+  }, [selectedCategory, allSubCategories]);
+
 
 
 
@@ -240,6 +259,25 @@ price: Number(price).toFixed(2),
 
 
 
+            {/* Subcategory */}
+      {filteredSubCategories.length > 0 && (
+        <>
+          <label className="block font-bold">Subcategory</label>
+          <select
+            value={selectedSubCategory}
+            onChange={(e) => setSelectedSubCategory(e.target.value)}
+            className="w-full border p-2 mb-4"
+          >
+            <option value="" disabled>Select a subcategory</option>
+            {filteredSubCategories.map((sub) => (
+              <option key={sub.id} value={sub.name}>{sub.name}</option>
+            ))}
+          </select>
+        </>
+      )}
+
+
+
 
 
 
@@ -254,7 +292,7 @@ price: Number(price).toFixed(2),
         required
       />
 
- 
+
 
 
 
@@ -501,7 +539,7 @@ price: Number(price).toFixed(2),
       <Upload onFilesUpload={handleImgChange} />Max 12 images
 
 
- <br/>
+      <br />
 
       <button type="submit" className="bg-green-500 text-white px-4 py-2">
         Save Product

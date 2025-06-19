@@ -45,6 +45,11 @@ export default function Sidebar() {
               </a>
             </li>    
             <li>
+              <a href="/sub" style={{ color: "white", textDecoration: "none" }}>
+                Add Sub-Category
+              </a>
+            </li>    
+            <li>
               <a href="/offer" style={{ color: "white", textDecoration: "none" }}>
                 Add Code
               </a>
