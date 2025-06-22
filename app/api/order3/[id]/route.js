@@ -24,7 +24,7 @@ export async function PATCH(req, { params }) {
     const currentUserInfo = Array.isArray(order.userInfo) ? order.userInfo : [];
 
     const quantity = parseInt(newItem.quantity, 10);
-    const discountPrice = parseFloat(newItem.discount);
+    const discountPrice = parseFloat(newItem.price);
 
     if (isNaN(quantity) || isNaN(discountPrice)) {
       return Response.json({ error: 'Invalid quantity or discount price' }, { status: 400 });

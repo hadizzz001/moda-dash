@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 const page = () => {
   const [allTemp1, setTemp1] = useState()
   const searchParams = useSearchParams()
-  const search = searchParams.get('id') 
+  const search = searchParams.get('id')
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
@@ -19,15 +19,16 @@ const page = () => {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [qty, setQty] = useState(1);
+  const [totalAmount, setTotalAmount] = useState(null);
   const [editableData, setEditableData] = useState({
     fname: allTemp1?.cartItems?.fname || '',
     lname: allTemp1?.cartItems?.lname || '',
     phone: allTemp1?.cartItems?.phone || '',
     city: allTemp1?.cartItems?.city || '',
     address: allTemp1?.cartItems?.address || '',
-    apt: allTemp1?.cartItems?.apt || '', 
+    apt: allTemp1?.cartItems?.apt || '',
   });
-  const [remark, setRemark] = useState({ 
+  const [remark, setRemark] = useState({
     apt: allTemp1?.remark || ''
   });
 
@@ -40,7 +41,7 @@ const page = () => {
         const response = await fetch(`/api/order/${search}`);
         if (response.ok) {
           const data = await response.json();
-          setTemp1(data); 
+          setTemp1(data);
 
           setEditableData({
             fname: data?.cartItems?.fname || '',
@@ -77,10 +78,10 @@ const page = () => {
       const response = await fetch(`/api/order/${search}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           cartItems: editableData,
           remark
-         }),
+        }),
       });
 
       if (response.ok) {
@@ -164,7 +165,7 @@ const page = () => {
     }
 
     setShowModal(false);
-    fetchProducts(); // refresh order
+    window.location.replace(`/order?id=${search}`);
   };
 
 
@@ -192,7 +193,7 @@ const page = () => {
     return { totalPrice: 0, totalItems: 0 };
   };
   const finalTotal = calculateFinalTotal();
- 
+
 
 
   const fetchAvailableProducts = async () => {
@@ -318,9 +319,68 @@ const page = () => {
 
 
 
-  const handleRemarkChange = (event) => { 
-  setRemark(event.target.value);
-};
+  const handleRemarkChange = (event) => {
+    setRemark(event.target.value);
+  };
+
+
+  const calculateOrderTotal = async (orders) => {
+    let grandTotal = 0;
+
+    for (const order of orders) {
+      let orderTotal = 0;
+
+      for (const item of order.userInfo) {
+        let price = 0;
+
+        if (item.type === "single") {
+          price = parseFloat(item.price);
+        } else if (item.selectedColor && item.selectedSize) {
+          const selectedColor = item.color.find(c => c.color === item.selectedColor);
+          const selectedSize = selectedColor?.size.find(s => s.name === item.selectedSize);
+          price = parseFloat(selectedSize?.price || "0");
+        }
+
+        const qty = parseInt(item.quantity || 1, 10);
+        orderTotal += price * qty;
+      }
+
+      // Add delivery fee
+      const delivery = parseFloat(order.delivery || "0");
+      orderTotal += delivery;
+
+      // Apply discount
+      let discountPercent = 0;
+      if (order.code) {
+        try {
+          const res = await fetch(`/api/offer/${order.code}`);
+          const data = await res.json();
+          discountPercent = data?.per || 0; // % discount
+        } catch (error) {
+          console.error("Failed to fetch discount:", error);
+        }
+      }
+
+      const discountAmount = (orderTotal * discountPercent) / 100;
+      const finalTotal = orderTotal - discountAmount;
+
+      grandTotal += finalTotal;
+    }
+
+    return grandTotal.toFixed(2); // Return as string with 2 decimals
+  };
+
+
+  useEffect(() => {
+    const fetchTotal = async () => {
+      if (allTemp1) {
+        const total = await calculateOrderTotal([allTemp1]);
+        setTotalAmount(total);
+      }
+    };
+
+    fetchTotal();
+  }, [allTemp1]);
 
 
 
@@ -329,7 +389,7 @@ const page = () => {
     <>
       <div className="bg-gray-100 h-screen py-8 text-[14px]">
         <div className="container mx-auto px-4">
-          <p className="font-bold mb-4">Order #: {allTemp1?.oid}</p> 
+          <p className="font-bold mb-4">Order #: {allTemp1?.oid}</p>
           <p className="font-bold mb-4">Receipt #: {allTemp1?.num}</p>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="col-md-8">
@@ -363,7 +423,7 @@ const page = () => {
                                 {(() => {
                                   const colorObj = temp.color?.find(c => c.color === temp.selectedColor);
                                   const sizeObj = colorObj?.sizes?.find(s => s.size === temp.selectedSize);
-                                  const price = sizeObj?.price ?? parseFloat(temp.discount);
+                                  const price = sizeObj?.price ?? parseFloat(temp.price);
                                   return `$${price}`;
                                 })()}
                               </td>
@@ -427,24 +487,24 @@ const page = () => {
 
                 {allTemp1 && Object?.keys(allTemp1).length > 0 ? (
                   <>
-<div className="flex justify-between mb-2">
-  <span>First Name:</span>
-  <input
-    type="text"
-    className="border p-1 w-1/2"
-    value={editableData.fname}
-    onChange={(e) => handleFieldChange("fname", e.target.value)}
-  />
-</div>
-<div className="flex justify-between mb-2">
-  <span>Last Name:</span>
-  <input
-    type="text"
-    className="border p-1 w-1/2"
-    value={editableData.lname}
-    onChange={(e) => handleFieldChange("lname", e.target.value)}
-  />
-</div>
+                    <div className="flex justify-between mb-2">
+                      <span>First Name:</span>
+                      <input
+                        type="text"
+                        className="border p-1 w-1/2"
+                        value={editableData.fname}
+                        onChange={(e) => handleFieldChange("fname", e.target.value)}
+                      />
+                    </div>
+                    <div className="flex justify-between mb-2">
+                      <span>Last Name:</span>
+                      <input
+                        type="text"
+                        className="border p-1 w-1/2"
+                        value={editableData.lname}
+                        onChange={(e) => handleFieldChange("lname", e.target.value)}
+                      />
+                    </div>
 
 
                     <div className="flex justify-between mb-2">
@@ -503,19 +563,23 @@ const page = () => {
                       <span className="font-semibold">{allTemp1.code}</span>
                     </div>
                     <div className="flex justify-between mb-2">
+                      <span className="font-semibold">Delivery:</span>
+                      <span className="font-semibold">${allTemp1.delivery}</span>
+                    </div>
+                    <div className="flex justify-between mb-2">
                       <span className="font-semibold">Total Amount:</span>
-                      <span className="font-semibold">${allTemp1.total}</span>
+                      <span className="font-semibold">{totalAmount !== null ? `$${totalAmount}` : "..."}</span>
                     </div>
 
                     <div className="mt-4">
-<textarea
-  value={remark}
-  onChange={handleRemarkChange}
-  placeholder="Enter remark"
-  className="border p-1 w-full"
-/>
+                      <textarea
+                        value={remark}
+                        onChange={handleRemarkChange}
+                        placeholder="Enter remark"
+                        className="border p-1 w-full"
+                      />
 
-                      <div className="mt-2"> 
+                      <div className="mt-2">
                         <button
                           onClick={handleSaveCustomerDetails}
                           className="bg-green-500 text-white p-1"
