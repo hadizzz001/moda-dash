@@ -324,51 +324,56 @@ const page = () => {
   };
 
 
-  const calculateOrderTotal = async (orders) => {
-    let grandTotal = 0;
+const calculateOrderTotal = async (orders) => {
+  let grandTotal = 0;
 
-    for (const order of orders) {
-      let orderTotal = 0;
+  for (const order of orders) {
+    let orderTotal = 0;
 
-      for (const item of order.userInfo) {
-        let price = 0;
+    for (const item of order.userInfo) {
+      let price = 0;
 
-        if (item.type === "single") {
-          price = parseFloat(item.price);
-        } else if (item.selectedColor && item.selectedSize) {
-          const selectedColor = item.color.find(c => c.color === item.selectedColor);
-          const selectedSize = selectedColor?.size.find(s => s.name === item.selectedSize);
-          price = parseFloat(selectedSize?.price || "0");
-        }
+      if (item.type === "single" || (item.type === "collection" && !item.selectedSize)) {
+        price = parseFloat(item.price);
+      } else if (item.type === "collection" && item.selectedColor && item.selectedSize) {
+        const selectedColor = item.color.find(c => c.color === item.selectedColor);
 
-        const qty = parseInt(item.quantity || 1, 10);
-        orderTotal += price * qty;
+        const selectedSize = selectedColor?.sizes?.find(
+          s => s.size === item.selectedSize
+        );
+
+        price = parseFloat(selectedSize?.price || "0");
       }
 
-      // Add delivery fee
-      const delivery = parseFloat(order.delivery || "0");
-      orderTotal += delivery;
-
-      // Apply discount
-      let discountPercent = 0;
-      if (order.code) {
-        try {
-          const res = await fetch(`/api/offer/${order.code}`);
-          const data = await res.json();
-          discountPercent = data?.per || 0; // % discount
-        } catch (error) {
-          console.error("Failed to fetch discount:", error);
-        }
-      }
-
-      const discountAmount = (orderTotal * discountPercent) / 100;
-      const finalTotal = orderTotal - discountAmount;
-
-      grandTotal += finalTotal;
+      const qty = parseInt(item.quantity || 1, 10);
+      orderTotal += price * qty;
     }
 
-    return grandTotal.toFixed(2); // Return as string with 2 decimals
-  };
+    // Add delivery fee
+    const delivery = parseFloat(order.delivery || "0");
+    orderTotal += delivery;
+
+    // Apply discount if applicable
+    let discountPercent = 0;
+    if (order.code) {
+      try {
+        const res = await fetch(`/api/offer/${order.code}`);
+        const data = await res.json();
+        discountPercent = data?.per || 0;
+      } catch (error) {
+        console.error("Failed to fetch discount:", error);
+      }
+    }
+
+    const discountAmount = (orderTotal * discountPercent) / 100;
+    const finalTotal = orderTotal - discountAmount;
+
+    grandTotal += finalTotal;
+  }
+
+  return grandTotal.toFixed(2);
+};
+
 
 
   useEffect(() => {

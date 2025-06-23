@@ -175,42 +175,45 @@ const Page = () => {
     }
   };
 
-  const calculateOrderTotal = async (order) => {
-    let orderTotal = 0;
+const calculateOrderTotal = async (order) => {
+  let orderTotal = 0;
 
-    for (const item of order.userInfo) {
-      let price = 0;
+  for (const item of order.userInfo) {
+    let price = 0;
 
-      if (item.type === "single") {
-        price = parseFloat(item.price);
-      } else if (item.selectedColor && item.selectedSize) {
-        const selectedColor = item.color?.find((c) => c.color === item.selectedColor);
-        const selectedSize = selectedColor?.size?.find((s) => s.name === item.selectedSize);
-        price = parseFloat(selectedSize?.price || "0");
-      }
-
-      const qty = parseInt(item.quantity || 1, 10);
-      orderTotal += price * qty;
+    if (item.type === "single" || (item.type === "collection" && !item.selectedSize)) {
+      // Single type or collection without size (flat price)
+      price = parseFloat(item.price);
+    } else if (item.type === "collection" && item.selectedColor && item.selectedSize) {
+      // Collection with size: find price based on selectedColor and selectedSize
+      const selectedColor = item.color?.find(c => c.color === item.selectedColor);
+      const selectedSize = selectedColor?.sizes?.find(s => s.size === item.selectedSize);
+      price = parseFloat(selectedSize?.price || "0");
     }
 
-    const delivery = parseFloat(order.delivery || "0");
-    orderTotal += delivery;
+    const qty = parseInt(item.quantity || 1, 10);
+    orderTotal += price * qty;
+  }
 
-    let discountPercent = 0;
+  const delivery = parseFloat(order.delivery || "0");
+  orderTotal += delivery;
 
-    if (order.code) {
-      try {
-        const res = await fetch(`/api/offer/${order.code}`);
-        const data = await res.json();
-        discountPercent = data?.per || 0;
-      } catch (err) {
-        console.error("Discount API failed", err);
-      }
+  let discountPercent = 0;
+
+  if (order.code) {
+    try {
+      const res = await fetch(`/api/offer/${order.code}`);
+      const data = await res.json();
+      discountPercent = data?.per || 0;
+    } catch (err) {
+      console.error("Discount API failed", err);
     }
+  }
 
-    const discountAmount = (orderTotal * discountPercent) / 100;
-    return (orderTotal - discountAmount).toFixed(2);
-  };
+  const discountAmount = (orderTotal * discountPercent) / 100;
+  return (orderTotal - discountAmount).toFixed(2);
+};
+
 
   useEffect(() => {
     const fetchTotals = async () => {
